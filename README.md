@@ -1,4 +1,4 @@
-1. Create ./pigeons/message.dart
+1. Create `./pigeons/message.dart`
 
 ```dart
 import 'package:pigeon/pigeon.dart';
