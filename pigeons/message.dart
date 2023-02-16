@@ -10,5 +10,7 @@ class Message {
 
 @HostApi()
 abstract class MessageApi {
-  List<Message> getMessages(String email);
+  // List<Message> getMessages(String email);
+
+  void getInt(int input);
 }
