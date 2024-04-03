@@ -83,7 +83,7 @@ void _getMessageFromPigeon() async {
     final List<Message?> messages = await pigeon.getMessages('people1@gmail.com');
     setState(() {
       // concat all messages into a single string
-      _message = messages.map((message) => message!.subject).join('\n');
+      _message = messages.map((message) => message!.email).join('\n');
     });
   }
 }
