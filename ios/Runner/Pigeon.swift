@@ -64,6 +64,44 @@ struct Message {
     ]
   }
 }
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct PyTorchRect {
+  var left: Double
+  var top: Double
+  var right: Double
+  var bottom: Double
+  var width: Double
+  var height: Double
+
+  static func fromList(_ list: [Any?]) -> PyTorchRect? {
+    let left = list[0] as! Double
+    let top = list[1] as! Double
+    let right = list[2] as! Double
+    let bottom = list[3] as! Double
+    let width = list[4] as! Double
+    let height = list[5] as! Double
+
+    return PyTorchRect(
+      left: left,
+      top: top,
+      right: right,
+      bottom: bottom,
+      width: width,
+      height: height
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      left,
+      top,
+      right,
+      bottom,
+      width,
+      height,
+    ]
+  }
+}
 private class MessageApiCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
@@ -125,6 +163,68 @@ class MessageApiSetup {
       }
     } else {
       getMessagesChannel.setMessageHandler(nil)
+    }
+  }
+}
+private class PyTorchApiCodecReader: FlutterStandardReader {
+  override func readValue(ofType type: UInt8) -> Any? {
+    switch type {
+    case 128:
+      return PyTorchRect.fromList(self.readValue() as! [Any?])
+    default:
+      return super.readValue(ofType: type)
+    }
+  }
+}
+
+private class PyTorchApiCodecWriter: FlutterStandardWriter {
+  override func writeValue(_ value: Any) {
+    if let value = value as? PyTorchRect {
+      super.writeByte(128)
+      super.writeValue(value.toList())
+    } else {
+      super.writeValue(value)
+    }
+  }
+}
+
+private class PyTorchApiCodecReaderWriter: FlutterStandardReaderWriter {
+  override func reader(with data: Data) -> FlutterStandardReader {
+    return PyTorchApiCodecReader(data: data)
+  }
+
+  override func writer(with data: NSMutableData) -> FlutterStandardWriter {
+    return PyTorchApiCodecWriter(data: data)
+  }
+}
+
+class PyTorchApiCodec: FlutterStandardMessageCodec {
+  static let shared = PyTorchApiCodec(readerWriter: PyTorchApiCodecReaderWriter())
+}
+
+/// Generated protocol from Pigeon that represents a handler of messages from Flutter.
+protocol PyTorchApi {
+  func getRects() throws -> [PyTorchRect]
+}
+
+/// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
+class PyTorchApiSetup {
+  /// The codec used by PyTorchApi.
+  static var codec: FlutterStandardMessageCodec { PyTorchApiCodec.shared }
+  /// Sets up an instance of `PyTorchApi` to handle messages through the `binaryMessenger`.
+  static func setUp(binaryMessenger: FlutterBinaryMessenger, api: PyTorchApi?) {
+    let getRectsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.PyTorchApi.getRects", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getRectsChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getRects()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getRectsChannel.setMessageHandler(nil)
     }
   }
 }

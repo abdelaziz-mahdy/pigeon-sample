@@ -166,6 +166,181 @@ public class Pigeon {
     }
   }
 
+  /** Generated class from Pigeon that represents data sent in messages. */
+  public static final class PyTorchRect {
+    private @NonNull Double left;
+
+    public @NonNull Double getLeft() {
+      return left;
+    }
+
+    public void setLeft(@NonNull Double setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"left\" is null.");
+      }
+      this.left = setterArg;
+    }
+
+    private @NonNull Double top;
+
+    public @NonNull Double getTop() {
+      return top;
+    }
+
+    public void setTop(@NonNull Double setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"top\" is null.");
+      }
+      this.top = setterArg;
+    }
+
+    private @NonNull Double right;
+
+    public @NonNull Double getRight() {
+      return right;
+    }
+
+    public void setRight(@NonNull Double setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"right\" is null.");
+      }
+      this.right = setterArg;
+    }
+
+    private @NonNull Double bottom;
+
+    public @NonNull Double getBottom() {
+      return bottom;
+    }
+
+    public void setBottom(@NonNull Double setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"bottom\" is null.");
+      }
+      this.bottom = setterArg;
+    }
+
+    private @NonNull Double width;
+
+    public @NonNull Double getWidth() {
+      return width;
+    }
+
+    public void setWidth(@NonNull Double setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"width\" is null.");
+      }
+      this.width = setterArg;
+    }
+
+    private @NonNull Double height;
+
+    public @NonNull Double getHeight() {
+      return height;
+    }
+
+    public void setHeight(@NonNull Double setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"height\" is null.");
+      }
+      this.height = setterArg;
+    }
+
+    /** Constructor is non-public to enforce null safety; use Builder. */
+    PyTorchRect() {}
+
+    public static final class Builder {
+
+      private @Nullable Double left;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setLeft(@NonNull Double setterArg) {
+        this.left = setterArg;
+        return this;
+      }
+
+      private @Nullable Double top;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setTop(@NonNull Double setterArg) {
+        this.top = setterArg;
+        return this;
+      }
+
+      private @Nullable Double right;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setRight(@NonNull Double setterArg) {
+        this.right = setterArg;
+        return this;
+      }
+
+      private @Nullable Double bottom;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setBottom(@NonNull Double setterArg) {
+        this.bottom = setterArg;
+        return this;
+      }
+
+      private @Nullable Double width;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setWidth(@NonNull Double setterArg) {
+        this.width = setterArg;
+        return this;
+      }
+
+      private @Nullable Double height;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setHeight(@NonNull Double setterArg) {
+        this.height = setterArg;
+        return this;
+      }
+
+      public @NonNull PyTorchRect build() {
+        PyTorchRect pigeonReturn = new PyTorchRect();
+        pigeonReturn.setLeft(left);
+        pigeonReturn.setTop(top);
+        pigeonReturn.setRight(right);
+        pigeonReturn.setBottom(bottom);
+        pigeonReturn.setWidth(width);
+        pigeonReturn.setHeight(height);
+        return pigeonReturn;
+      }
+    }
+
+    @NonNull
+    ArrayList<Object> toList() {
+      ArrayList<Object> toListResult = new ArrayList<Object>(6);
+      toListResult.add(left);
+      toListResult.add(top);
+      toListResult.add(right);
+      toListResult.add(bottom);
+      toListResult.add(width);
+      toListResult.add(height);
+      return toListResult;
+    }
+
+    static @NonNull PyTorchRect fromList(@NonNull ArrayList<Object> list) {
+      PyTorchRect pigeonResult = new PyTorchRect();
+      Object left = list.get(0);
+      pigeonResult.setLeft((Double) left);
+      Object top = list.get(1);
+      pigeonResult.setTop((Double) top);
+      Object right = list.get(2);
+      pigeonResult.setRight((Double) right);
+      Object bottom = list.get(3);
+      pigeonResult.setBottom((Double) bottom);
+      Object width = list.get(4);
+      pigeonResult.setWidth((Double) width);
+      Object height = list.get(5);
+      pigeonResult.setHeight((Double) height);
+      return pigeonResult;
+    }
+  }
+
   private static class MessageApiCodec extends StandardMessageCodec {
     public static final MessageApiCodec INSTANCE = new MessageApiCodec();
 
@@ -216,6 +391,69 @@ public class Pigeon {
                 String emailArg = (String) args.get(0);
                 try {
                   List<Message> output = api.getMessages(emailArg);
+                  wrapped.add(0, output);
+                }
+ catch (Throwable exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  wrapped = wrappedError;
+                }
+                reply.reply(wrapped);
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+    }
+  }
+
+  private static class PyTorchApiCodec extends StandardMessageCodec {
+    public static final PyTorchApiCodec INSTANCE = new PyTorchApiCodec();
+
+    private PyTorchApiCodec() {}
+
+    @Override
+    protected Object readValueOfType(byte type, @NonNull ByteBuffer buffer) {
+      switch (type) {
+        case (byte) 128:
+          return PyTorchRect.fromList((ArrayList<Object>) readValue(buffer));
+        default:
+          return super.readValueOfType(type, buffer);
+      }
+    }
+
+    @Override
+    protected void writeValue(@NonNull ByteArrayOutputStream stream, Object value) {
+      if (value instanceof PyTorchRect) {
+        stream.write(128);
+        writeValue(stream, ((PyTorchRect) value).toList());
+      } else {
+        super.writeValue(stream, value);
+      }
+    }
+  }
+
+  /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
+  public interface PyTorchApi {
+
+    @NonNull 
+    List<PyTorchRect> getRects();
+
+    /** The codec used by PyTorchApi. */
+    static @NonNull MessageCodec<Object> getCodec() {
+      return PyTorchApiCodec.INSTANCE;
+    }
+    /**Sets up an instance of `PyTorchApi` to handle messages through the `binaryMessenger`. */
+    static void setUp(@NonNull BinaryMessenger binaryMessenger, @Nullable PyTorchApi api) {
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.reproduce_issues_pigeon.PyTorchApi.getRects", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  List<PyTorchRect> output = api.getRects();
                   wrapped.add(0, output);
                 }
  catch (Throwable exception) {

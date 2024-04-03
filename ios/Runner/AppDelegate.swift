@@ -9,6 +9,14 @@ private class PigeonApiImplementation: MessageApi {
   }
 }
 
+private class PyTorchApiImplementation: PyTorchApi {
+  func getRects() throws -> [PyTorchRect] {
+    return [
+          PyTorchRect(left: 0.0, top: 0.0, right: 1.0, bottom: 1.0, width: 1.0, height: 1.0)
+        ]
+  }
+}
+
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
   override func application(
@@ -18,8 +26,8 @@ private class PigeonApiImplementation: MessageApi {
     GeneratedPluginRegistrant.register(with: self)
 
     let controller = window?.rootViewController as! FlutterViewController
-    let api = PigeonApiImplementation()
-    MessageApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: api)
+    let api = PyTorchApiImplementation()
+    PyTorchApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: api)
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

@@ -46,6 +46,52 @@ class Message {
   }
 }
 
+class PyTorchRect {
+  PyTorchRect({
+    required this.left,
+    required this.top,
+    required this.right,
+    required this.bottom,
+    required this.width,
+    required this.height,
+  });
+
+  double left;
+
+  double top;
+
+  double right;
+
+  double bottom;
+
+  double width;
+
+  double height;
+
+  Object encode() {
+    return <Object?>[
+      left,
+      top,
+      right,
+      bottom,
+      width,
+      height,
+    ];
+  }
+
+  static PyTorchRect decode(Object result) {
+    result as List<Object?>;
+    return PyTorchRect(
+      left: result[0]! as double,
+      top: result[1]! as double,
+      right: result[2]! as double,
+      bottom: result[3]! as double,
+      width: result[4]! as double,
+      height: result[5]! as double,
+    );
+  }
+}
+
 class _MessageApiCodec extends StandardMessageCodec {
   const _MessageApiCodec();
   @override
@@ -103,6 +149,67 @@ class MessageApi {
       );
     } else {
       return (__pigeon_replyList[0] as List<Object?>?)!.cast<Message?>();
+    }
+  }
+}
+
+class _PyTorchApiCodec extends StandardMessageCodec {
+  const _PyTorchApiCodec();
+  @override
+  void writeValue(WriteBuffer buffer, Object? value) {
+    if (value is PyTorchRect) {
+      buffer.putUint8(128);
+      writeValue(buffer, value.encode());
+    } else {
+      super.writeValue(buffer, value);
+    }
+  }
+
+  @override
+  Object? readValueOfType(int type, ReadBuffer buffer) {
+    switch (type) {
+      case 128: 
+        return PyTorchRect.decode(readValue(buffer)!);
+      default:
+        return super.readValueOfType(type, buffer);
+    }
+  }
+}
+
+class PyTorchApi {
+  /// Constructor for [PyTorchApi].  The [binaryMessenger] named argument is
+  /// available for dependency injection.  If it is left null, the default
+  /// BinaryMessenger will be used which routes to the host platform.
+  PyTorchApi({BinaryMessenger? binaryMessenger})
+      : __pigeon_binaryMessenger = binaryMessenger;
+  final BinaryMessenger? __pigeon_binaryMessenger;
+
+  static const MessageCodec<Object?> pigeonChannelCodec = _PyTorchApiCodec();
+
+  Future<List<PyTorchRect?>> getRects() async {
+    const String __pigeon_channelName = 'dev.flutter.pigeon.reproduce_issues_pigeon.PyTorchApi.getRects';
+    final BasicMessageChannel<Object?> __pigeon_channel = BasicMessageChannel<Object?>(
+      __pigeon_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: __pigeon_binaryMessenger,
+    );
+    final List<Object?>? __pigeon_replyList =
+        await __pigeon_channel.send(null) as List<Object?>?;
+    if (__pigeon_replyList == null) {
+      throw _createConnectionError(__pigeon_channelName);
+    } else if (__pigeon_replyList.length > 1) {
+      throw PlatformException(
+        code: __pigeon_replyList[0]! as String,
+        message: __pigeon_replyList[1] as String?,
+        details: __pigeon_replyList[2],
+      );
+    } else if (__pigeon_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (__pigeon_replyList[0] as List<Object?>?)!.cast<PyTorchRect?>();
     }
   }
 }

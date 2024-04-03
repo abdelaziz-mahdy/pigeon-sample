@@ -79,11 +79,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
 void _getMessageFromPigeon() async {
-    final MessageApi pigeon = MessageApi();
-    final List<Message?> messages = await pigeon.getMessages('people1@gmail.com');
+    // final MessageApi pigeon = MessageApi();
+    // final List<Message?> messages = await pigeon.getMessages('people1@gmail.com');
+    // setState(() {
+    //   // concat all messages into a single string
+    //   _message = messages.map((message) => message!.email).join('\n');
+    // });
+
+    final PyTorchApi pigeon2 = PyTorchApi();
+    final PyTorchRect rect = PyTorchRect(left: 1, top: 2, right: 3, bottom: 4, width: 5, height: 6);
+    final List<PyTorchRect?> rects = await pigeon2.getRects();
     setState(() {
       // concat all messages into a single string
-      _message = messages.map((message) => message!.email).join('\n');
+      _message = rects.map((rect) => rect!.left.toString()).join('\n');
     });
   }
 }

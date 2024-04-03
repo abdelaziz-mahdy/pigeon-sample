@@ -12,3 +12,19 @@ class Message {
 abstract class MessageApi {
   List<Message> getMessages(String email);
 }
+
+class PyTorchRect {
+  double left;
+  double top;
+  double right;
+  double bottom;
+  double width;
+  double height;
+  PyTorchRect(
+      this.left, this.top, this.width, this.height, this.right, this.bottom);
+}
+
+@HostApi()
+abstract class PyTorchApi {
+  List<PyTorchRect> getRects();
+}

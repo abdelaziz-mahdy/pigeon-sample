@@ -66,6 +66,40 @@ data class Message (
     )
   }
 }
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class PyTorchRect (
+  val left: Double,
+  val top: Double,
+  val right: Double,
+  val bottom: Double,
+  val width: Double,
+  val height: Double
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): PyTorchRect {
+      val left = list[0] as Double
+      val top = list[1] as Double
+      val right = list[2] as Double
+      val bottom = list[3] as Double
+      val width = list[4] as Double
+      val height = list[5] as Double
+      return PyTorchRect(left, top, right, bottom, width, height)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      left,
+      top,
+      right,
+      bottom,
+      width,
+      height,
+    )
+  }
+}
 @Suppress("UNCHECKED_CAST")
 private object MessageApiCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
@@ -110,6 +144,60 @@ interface MessageApi {
             var wrapped: List<Any?>
             try {
               wrapped = listOf<Any?>(api.getMessages(emailArg))
+            } catch (exception: Throwable) {
+              wrapped = wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+    }
+  }
+}
+@Suppress("UNCHECKED_CAST")
+private object PyTorchApiCodec : StandardMessageCodec() {
+  override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
+    return when (type) {
+      128.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          PyTorchRect.fromList(it)
+        }
+      }
+      else -> super.readValueOfType(type, buffer)
+    }
+  }
+  override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
+    when (value) {
+      is PyTorchRect -> {
+        stream.write(128)
+        writeValue(stream, value.toList())
+      }
+      else -> super.writeValue(stream, value)
+    }
+  }
+}
+
+/** Generated interface from Pigeon that represents a handler of messages from Flutter. */
+interface PyTorchApi {
+  fun getRects(): List<PyTorchRect>
+
+  companion object {
+    /** The codec used by PyTorchApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      PyTorchApiCodec
+    }
+    /** Sets up an instance of `PyTorchApi` to handle messages through the `binaryMessenger`. */
+    @Suppress("UNCHECKED_CAST")
+    fun setUp(binaryMessenger: BinaryMessenger, api: PyTorchApi?) {
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.reproduce_issues_pigeon.PyTorchApi.getRects", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            var wrapped: List<Any?>
+            try {
+              wrapped = listOf<Any?>(api.getRects())
             } catch (exception: Throwable) {
               wrapped = wrapError(exception)
             }
