@@ -41,7 +41,7 @@ flutter pub run pigeon \
 --experimental_swift_out ios/Runner/Pigeon.swift \
 --java_out ./android/app/src/main/kotlin/com/example/reproduce_issues_pigeon/Pigeon.java \
 --java_package "com.example.reproduce_issues_pigeon" \
---experimental_kotlin_out ./android/app/src/main/kotlin/com/example/reproduce_issues_pigeon/Pigeon.kt
+--kotlin_out ./android/app/src/main/kotlin/com/example/reproduce_issues_pigeon/Pigeon.kt
 ```
 
 3. Create sample test code (Android only)
