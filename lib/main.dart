@@ -49,7 +49,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Message?> myMessage = [];
+
+    String _message = 'No message yet';
 
   @override
   Widget build(BuildContext context) {
@@ -66,10 +67,8 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Center(
-        child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: myMessage.length,
-          itemBuilder: (_, int index) => buildItemMessage(myMessage[index]),
+        child: Container(
+          child: Text(_message),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -79,20 +78,12 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  buildItemMessage(Message? message) => Container(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        children: [
-          Text(message?.email ?? ''),
-          Text(message?.subject ?? ''),
-          Text(message?.body ?? ''),
-        ],
-      ));
-
-  void _getMessageFromPigeon() async {
-    final retrieved = await MessageApi().getMessages('people');
+void _getMessageFromPigeon() async {
+    final MessageApi pigeon = MessageApi();
+    final List<Message?> messages = await pigeon.getMessages('people1@gmail.com');
     setState(() {
-      myMessage = retrieved;
+      // concat all messages into a single string
+      _message = messages.map((message) => message!.subject).join('\n');
     });
   }
 }

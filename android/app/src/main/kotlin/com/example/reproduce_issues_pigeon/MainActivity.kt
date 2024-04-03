@@ -7,7 +7,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        Pigeon.MessageApi.setup(flutterEngine.dartExecutor.binaryMessenger, FakeMessageApiData())
+        Pigeon.MessageApi.setUp(flutterEngine.dartExecutor.binaryMessenger, FakeMessageApiData())
     }
 
 }
