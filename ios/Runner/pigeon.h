@@ -10,8 +10,20 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class Message;
 @class PyTorchRect;
 @class ResultObjectDetection;
+
+@interface Message : NSObject
+/// `init` unavailable to enforce nonnull fields, see the `make` class method.
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)makeWithSubject:(NSString *)subject
+    body:(NSString *)body
+    email:(NSString *)email;
+@property(nonatomic, copy) NSString * subject;
+@property(nonatomic, copy) NSString * body;
+@property(nonatomic, copy) NSString * email;
+@end
 
 @interface PyTorchRect : NSObject
 /// `init` unavailable to enforce nonnull fields, see the `make` class method.
@@ -42,6 +54,26 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, assign) double  score;
 @property(nonatomic, strong) PyTorchRect * rect;
 @end
+
+/// The codec used by MessageApi.
+NSObject<FlutterMessageCodec> *MessageApiGetCodec(void);
+
+@protocol MessageApi
+/// @return `nil` only when `error != nil`.
+- (nullable NSArray<Message *> *)getMessagesEmail:(NSString *)email error:(FlutterError *_Nullable *_Nonnull)error;
+@end
+
+extern void SetUpMessageApi(id<FlutterBinaryMessenger> binaryMessenger, NSObject<MessageApi> *_Nullable api);
+
+/// The codec used by PyTorchApi.
+NSObject<FlutterMessageCodec> *PyTorchApiGetCodec(void);
+
+@protocol PyTorchApi
+/// @return `nil` only when `error != nil`.
+- (nullable NSArray<PyTorchRect *> *)getRectsWithError:(FlutterError *_Nullable *_Nonnull)error;
+@end
+
+extern void SetUpPyTorchApi(id<FlutterBinaryMessenger> binaryMessenger, NSObject<PyTorchApi> *_Nullable api);
 
 /// The codec used by ModelApi.
 NSObject<FlutterMessageCodec> *ModelApiGetCodec(void);

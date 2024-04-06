@@ -67,6 +67,106 @@ public class Pigeon {
   @interface CanIgnoreReturnValue {}
 
   /** Generated class from Pigeon that represents data sent in messages. */
+  public static final class Message {
+    private @NonNull String subject;
+
+    public @NonNull String getSubject() {
+      return subject;
+    }
+
+    public void setSubject(@NonNull String setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"subject\" is null.");
+      }
+      this.subject = setterArg;
+    }
+
+    private @NonNull String body;
+
+    public @NonNull String getBody() {
+      return body;
+    }
+
+    public void setBody(@NonNull String setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"body\" is null.");
+      }
+      this.body = setterArg;
+    }
+
+    private @NonNull String email;
+
+    public @NonNull String getEmail() {
+      return email;
+    }
+
+    public void setEmail(@NonNull String setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"email\" is null.");
+      }
+      this.email = setterArg;
+    }
+
+    /** Constructor is non-public to enforce null safety; use Builder. */
+    Message() {}
+
+    public static final class Builder {
+
+      private @Nullable String subject;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setSubject(@NonNull String setterArg) {
+        this.subject = setterArg;
+        return this;
+      }
+
+      private @Nullable String body;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setBody(@NonNull String setterArg) {
+        this.body = setterArg;
+        return this;
+      }
+
+      private @Nullable String email;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setEmail(@NonNull String setterArg) {
+        this.email = setterArg;
+        return this;
+      }
+
+      public @NonNull Message build() {
+        Message pigeonReturn = new Message();
+        pigeonReturn.setSubject(subject);
+        pigeonReturn.setBody(body);
+        pigeonReturn.setEmail(email);
+        return pigeonReturn;
+      }
+    }
+
+    @NonNull
+    ArrayList<Object> toList() {
+      ArrayList<Object> toListResult = new ArrayList<Object>(3);
+      toListResult.add(subject);
+      toListResult.add(body);
+      toListResult.add(email);
+      return toListResult;
+    }
+
+    static @NonNull Message fromList(@NonNull ArrayList<Object> list) {
+      Message pigeonResult = new Message();
+      Object subject = list.get(0);
+      pigeonResult.setSubject((String) subject);
+      Object body = list.get(1);
+      pigeonResult.setBody((String) body);
+      Object email = list.get(2);
+      pigeonResult.setEmail((String) email);
+      return pigeonResult;
+    }
+  }
+
+  /** Generated class from Pigeon that represents data sent in messages. */
   public static final class PyTorchRect {
     private @NonNull Double left;
 
@@ -388,18 +488,81 @@ public class Pigeon {
     void error(@NonNull Throwable error);
   }
 
-  private static class ModelApiCodec extends StandardMessageCodec {
-    public static final ModelApiCodec INSTANCE = new ModelApiCodec();
+  private static class MessageApiCodec extends StandardMessageCodec {
+    public static final MessageApiCodec INSTANCE = new MessageApiCodec();
 
-    private ModelApiCodec() {}
+    private MessageApiCodec() {}
+
+    @Override
+    protected Object readValueOfType(byte type, @NonNull ByteBuffer buffer) {
+      switch (type) {
+        case (byte) 128:
+          return Message.fromList((ArrayList<Object>) readValue(buffer));
+        default:
+          return super.readValueOfType(type, buffer);
+      }
+    }
+
+    @Override
+    protected void writeValue(@NonNull ByteArrayOutputStream stream, Object value) {
+      if (value instanceof Message) {
+        stream.write(128);
+        writeValue(stream, ((Message) value).toList());
+      } else {
+        super.writeValue(stream, value);
+      }
+    }
+  }
+
+  /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
+  public interface MessageApi {
+
+    @NonNull 
+    List<Message> getMessages(@NonNull String email);
+
+    /** The codec used by MessageApi. */
+    static @NonNull MessageCodec<Object> getCodec() {
+      return MessageApiCodec.INSTANCE;
+    }
+    /**Sets up an instance of `MessageApi` to handle messages through the `binaryMessenger`. */
+    static void setUp(@NonNull BinaryMessenger binaryMessenger, @Nullable MessageApi api) {
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.reproduce_issues_pigeon.MessageApi.getMessages", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                ArrayList<Object> args = (ArrayList<Object>) message;
+                String emailArg = (String) args.get(0);
+                try {
+                  List<Message> output = api.getMessages(emailArg);
+                  wrapped.add(0, output);
+                }
+ catch (Throwable exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  wrapped = wrappedError;
+                }
+                reply.reply(wrapped);
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+    }
+  }
+
+  private static class PyTorchApiCodec extends StandardMessageCodec {
+    public static final PyTorchApiCodec INSTANCE = new PyTorchApiCodec();
+
+    private PyTorchApiCodec() {}
 
     @Override
     protected Object readValueOfType(byte type, @NonNull ByteBuffer buffer) {
       switch (type) {
         case (byte) 128:
           return PyTorchRect.fromList((ArrayList<Object>) readValue(buffer));
-        case (byte) 129:
-          return ResultObjectDetection.fromList((ArrayList<Object>) readValue(buffer));
         default:
           return super.readValueOfType(type, buffer);
       }
@@ -410,8 +573,78 @@ public class Pigeon {
       if (value instanceof PyTorchRect) {
         stream.write(128);
         writeValue(stream, ((PyTorchRect) value).toList());
-      } else if (value instanceof ResultObjectDetection) {
+      } else {
+        super.writeValue(stream, value);
+      }
+    }
+  }
+
+  /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
+  public interface PyTorchApi {
+
+    @NonNull 
+    List<PyTorchRect> getRects();
+
+    /** The codec used by PyTorchApi. */
+    static @NonNull MessageCodec<Object> getCodec() {
+      return PyTorchApiCodec.INSTANCE;
+    }
+    /**Sets up an instance of `PyTorchApi` to handle messages through the `binaryMessenger`. */
+    static void setUp(@NonNull BinaryMessenger binaryMessenger, @Nullable PyTorchApi api) {
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.reproduce_issues_pigeon.PyTorchApi.getRects", getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<Object>();
+                try {
+                  List<PyTorchRect> output = api.getRects();
+                  wrapped.add(0, output);
+                }
+ catch (Throwable exception) {
+                  ArrayList<Object> wrappedError = wrapError(exception);
+                  wrapped = wrappedError;
+                }
+                reply.reply(wrapped);
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+    }
+  }
+
+  private static class ModelApiCodec extends StandardMessageCodec {
+    public static final ModelApiCodec INSTANCE = new ModelApiCodec();
+
+    private ModelApiCodec() {}
+
+    @Override
+    protected Object readValueOfType(byte type, @NonNull ByteBuffer buffer) {
+      switch (type) {
+        case (byte) 128:
+          return Message.fromList((ArrayList<Object>) readValue(buffer));
+        case (byte) 129:
+          return PyTorchRect.fromList((ArrayList<Object>) readValue(buffer));
+        case (byte) 130:
+          return ResultObjectDetection.fromList((ArrayList<Object>) readValue(buffer));
+        default:
+          return super.readValueOfType(type, buffer);
+      }
+    }
+
+    @Override
+    protected void writeValue(@NonNull ByteArrayOutputStream stream, Object value) {
+      if (value instanceof Message) {
+        stream.write(128);
+        writeValue(stream, ((Message) value).toList());
+      } else if (value instanceof PyTorchRect) {
         stream.write(129);
+        writeValue(stream, ((PyTorchRect) value).toList());
+      } else if (value instanceof ResultObjectDetection) {
+        stream.write(130);
         writeValue(stream, ((ResultObjectDetection) value).toList());
       } else {
         super.writeValue(stream, value);

@@ -40,6 +40,32 @@ private func nilOrValue<T>(_ value: Any?) -> T? {
 }
 
 /// Generated class from Pigeon that represents data sent in messages.
+struct Message {
+  var subject: String
+  var body: String
+  var email: String
+
+  static func fromList(_ list: [Any?]) -> Message? {
+    let subject = list[0] as! String
+    let body = list[1] as! String
+    let email = list[2] as! String
+
+    return Message(
+      subject: subject,
+      body: body,
+      email: email
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      subject,
+      body,
+      email,
+    ]
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
 struct PyTorchRect {
   var left: Double
   var top: Double
@@ -107,12 +133,140 @@ struct ResultObjectDetection {
   }
 }
 
-private class ModelApiCodecReader: FlutterStandardReader {
+private class MessageApiCodecReader: FlutterStandardReader {
+  override func readValue(ofType type: UInt8) -> Any? {
+    switch type {
+    case 128:
+      return Message.fromList(self.readValue() as! [Any?])
+    default:
+      return super.readValue(ofType: type)
+    }
+  }
+}
+
+private class MessageApiCodecWriter: FlutterStandardWriter {
+  override func writeValue(_ value: Any) {
+    if let value = value as? Message {
+      super.writeByte(128)
+      super.writeValue(value.toList())
+    } else {
+      super.writeValue(value)
+    }
+  }
+}
+
+private class MessageApiCodecReaderWriter: FlutterStandardReaderWriter {
+  override func reader(with data: Data) -> FlutterStandardReader {
+    return MessageApiCodecReader(data: data)
+  }
+
+  override func writer(with data: NSMutableData) -> FlutterStandardWriter {
+    return MessageApiCodecWriter(data: data)
+  }
+}
+
+class MessageApiCodec: FlutterStandardMessageCodec {
+  static let shared = MessageApiCodec(readerWriter: MessageApiCodecReaderWriter())
+}
+
+/// Generated protocol from Pigeon that represents a handler of messages from Flutter.
+protocol MessageApi {
+  func getMessages(email: String) throws -> [Message]
+}
+
+/// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
+class MessageApiSetup {
+  /// The codec used by MessageApi.
+  static var codec: FlutterStandardMessageCodec { MessageApiCodec.shared }
+  /// Sets up an instance of `MessageApi` to handle messages through the `binaryMessenger`.
+  static func setUp(binaryMessenger: FlutterBinaryMessenger, api: MessageApi?) {
+    let getMessagesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.MessageApi.getMessages", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getMessagesChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let emailArg = args[0] as! String
+        do {
+          let result = try api.getMessages(email: emailArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getMessagesChannel.setMessageHandler(nil)
+    }
+  }
+}
+private class PyTorchApiCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
     case 128:
       return PyTorchRect.fromList(self.readValue() as! [Any?])
+    default:
+      return super.readValue(ofType: type)
+    }
+  }
+}
+
+private class PyTorchApiCodecWriter: FlutterStandardWriter {
+  override func writeValue(_ value: Any) {
+    if let value = value as? PyTorchRect {
+      super.writeByte(128)
+      super.writeValue(value.toList())
+    } else {
+      super.writeValue(value)
+    }
+  }
+}
+
+private class PyTorchApiCodecReaderWriter: FlutterStandardReaderWriter {
+  override func reader(with data: Data) -> FlutterStandardReader {
+    return PyTorchApiCodecReader(data: data)
+  }
+
+  override func writer(with data: NSMutableData) -> FlutterStandardWriter {
+    return PyTorchApiCodecWriter(data: data)
+  }
+}
+
+class PyTorchApiCodec: FlutterStandardMessageCodec {
+  static let shared = PyTorchApiCodec(readerWriter: PyTorchApiCodecReaderWriter())
+}
+
+/// Generated protocol from Pigeon that represents a handler of messages from Flutter.
+protocol PyTorchApi {
+  func getRects() throws -> [PyTorchRect]
+}
+
+/// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
+class PyTorchApiSetup {
+  /// The codec used by PyTorchApi.
+  static var codec: FlutterStandardMessageCodec { PyTorchApiCodec.shared }
+  /// Sets up an instance of `PyTorchApi` to handle messages through the `binaryMessenger`.
+  static func setUp(binaryMessenger: FlutterBinaryMessenger, api: PyTorchApi?) {
+    let getRectsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.PyTorchApi.getRects", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getRectsChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getRects()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getRectsChannel.setMessageHandler(nil)
+    }
+  }
+}
+private class ModelApiCodecReader: FlutterStandardReader {
+  override func readValue(ofType type: UInt8) -> Any? {
+    switch type {
+    case 128:
+      return Message.fromList(self.readValue() as! [Any?])
     case 129:
+      return PyTorchRect.fromList(self.readValue() as! [Any?])
+    case 130:
       return ResultObjectDetection.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -122,11 +276,14 @@ private class ModelApiCodecReader: FlutterStandardReader {
 
 private class ModelApiCodecWriter: FlutterStandardWriter {
   override func writeValue(_ value: Any) {
-    if let value = value as? PyTorchRect {
+    if let value = value as? Message {
       super.writeByte(128)
       super.writeValue(value.toList())
-    } else if let value = value as? ResultObjectDetection {
+    } else if let value = value as? PyTorchRect {
       super.writeByte(129)
+      super.writeValue(value.toList())
+    } else if let value = value as? ResultObjectDetection {
+      super.writeByte(130)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)

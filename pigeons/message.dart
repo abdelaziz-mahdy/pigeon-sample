@@ -9,6 +9,24 @@ import 'package:pigeon/pigeon.dart';
 
 // flutter pub run pigeon --input pigeons/messages.dart --dart_out lib/pigeon.dart --objc_header_out ios/Classes/pigeon.h --objc_source_out ios/Classes/pigeon.mm --java_out android/src/main/java/com/abdelaziz_mahdy/pytorch_lite/Pigeon.java --java_package "com.abdelaziz_mahdy.pytorch_lite"
 
+class Message {
+  final String subject;
+  final String body;
+  final String email;
+
+  Message(this.subject, this.body, this.email);
+}
+
+@HostApi()
+abstract class MessageApi {
+  List<Message> getMessages(String email);
+}
+
+@HostApi()
+abstract class PyTorchApi {
+  List<PyTorchRect> getRects();
+}
+
 class PyTorchRect {
   double left;
   double top;
