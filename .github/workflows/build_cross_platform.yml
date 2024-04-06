@@ -1,0 +1,69 @@
+name: Build_on_platforms
+on:
+  push:
+
+
+jobs:
+  android_windows:
+    name: Android_windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+      - uses: actions/checkout@v2
+        with:
+          submodules: "true"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+      - run: flutter pub get
+      # Add separate steps for each ABI
+      - name: Build and analyze APK for android-arm
+        run: flutter build apk --analyze-size --target-platform=android-arm
+  
+      - name: Build and analyze APK for android-arm64
+        run: flutter build apk --analyze-size --target-platform=android-arm64
+  
+      - name: Build and analyze APK for android-x64
+        run: flutter build apk --analyze-size --target-platform=android-x64 
+  android_macos:
+    name: Android_macos
+    runs-on: macos-latest
+    steps:
+      - uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+      - uses: actions/checkout@v2
+        with:
+          submodules: "true"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+      - run: flutter pub get
+      # Add separate steps for each ABI
+      - name: Build and analyze APK for android-arm
+        run: flutter build apk --analyze-size --target-platform=android-arm
+  
+      - name: Build and analyze APK for android-arm64
+        run: flutter build apk --analyze-size --target-platform=android-arm64
+  
+      - name: Build and analyze APK for android-x64
+        run: flutter build apk --analyze-size --target-platform=android-x64
+  ios:
+    name: iOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: "true"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+      - run: flutter pub get
+      - run: flutter build ios --no-codesign
+
+
