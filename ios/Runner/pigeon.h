@@ -10,19 +10,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class Message;
 @class PyTorchRect;
-
-@interface Message : NSObject
-/// `init` unavailable to enforce nonnull fields, see the `make` class method.
-- (instancetype)init NS_UNAVAILABLE;
-+ (instancetype)makeWithSubject:(NSString *)subject
-    body:(NSString *)body
-    email:(NSString *)email;
-@property(nonatomic, copy) NSString * subject;
-@property(nonatomic, copy) NSString * body;
-@property(nonatomic, copy) NSString * email;
-@end
+@class ResultObjectDetection;
 
 @interface PyTorchRect : NSObject
 /// `init` unavailable to enforce nonnull fields, see the `make` class method.
@@ -41,24 +30,36 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, assign) double  height;
 @end
 
-/// The codec used by MessageApi.
-NSObject<FlutterMessageCodec> *MessageApiGetCodec(void);
-
-@protocol MessageApi
-/// @return `nil` only when `error != nil`.
-- (nullable NSArray<Message *> *)getMessagesEmail:(NSString *)email error:(FlutterError *_Nullable *_Nonnull)error;
+@interface ResultObjectDetection : NSObject
+/// `init` unavailable to enforce nonnull fields, see the `make` class method.
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)makeWithClassIndex:(NSInteger )classIndex
+    className:(nullable NSString *)className
+    score:(double )score
+    rect:(PyTorchRect *)rect;
+@property(nonatomic, assign) NSInteger  classIndex;
+@property(nonatomic, copy, nullable) NSString * className;
+@property(nonatomic, assign) double  score;
+@property(nonatomic, strong) PyTorchRect * rect;
 @end
 
-extern void SetUpMessageApi(id<FlutterBinaryMessenger> binaryMessenger, NSObject<MessageApi> *_Nullable api);
+/// The codec used by ModelApi.
+NSObject<FlutterMessageCodec> *ModelApiGetCodec(void);
 
-/// The codec used by PyTorchApi.
-NSObject<FlutterMessageCodec> *PyTorchApiGetCodec(void);
-
-@protocol PyTorchApi
-/// @return `nil` only when `error != nil`.
-- (nullable NSArray<PyTorchRect *> *)getRectsWithError:(FlutterError *_Nullable *_Nonnull)error;
+@protocol ModelApi
+- (void)loadModelModelPath:(NSString *)modelPath numberOfClasses:(nullable NSNumber *)numberOfClasses imageWidth:(nullable NSNumber *)imageWidth imageHeight:(nullable NSNumber *)imageHeight objectDetectionModelType:(nullable NSNumber *)objectDetectionModelType completion:(void (^)(NSNumber *_Nullable, FlutterError *_Nullable))completion;
+///predicts abstract number input
+- (void)getPredictionCustomIndex:(NSInteger)index input:(NSArray<double> *)input shape:(NSArray<NSInteger> *)shape dtype:(NSString *)dtype completion:(void (^)(NSArray *_Nullable, FlutterError *_Nullable))completion;
+///predicts raw image but returns the raw net output
+- (void)getRawImagePredictionListIndex:(NSInteger)index imageData:(FlutterStandardTypedData *)imageData completion:(void (^)(NSArray<double> *_Nullable, FlutterError *_Nullable))completion;
+///predicts raw image but returns the raw net output
+- (void)getRawImagePredictionListObjectDetectionIndex:(NSInteger)index imageData:(FlutterStandardTypedData *)imageData minimumScore:(double)minimumScore IOUThreshold:(double)IOUThreshold boxesLimit:(NSInteger)boxesLimit completion:(void (^)(NSArray<ResultObjectDetection *> *_Nullable, FlutterError *_Nullable))completion;
+///predicts image but returns the raw net output
+- (void)getImagePredictionListIndex:(NSInteger)index imageData:(nullable FlutterStandardTypedData *)imageData imageBytesList:(nullable NSArray<FlutterStandardTypedData *> *)imageBytesList imageWidthForBytesList:(nullable NSNumber *)imageWidthForBytesList imageHeightForBytesList:(nullable NSNumber *)imageHeightForBytesList mean:(NSArray<double> *)mean std:(NSArray<double> *)std completion:(void (^)(NSArray<double> *_Nullable, FlutterError *_Nullable))completion;
+///predicts image but returns the output detections
+- (void)getImagePredictionListObjectDetectionIndex:(NSInteger)index imageData:(nullable FlutterStandardTypedData *)imageData imageBytesList:(nullable NSArray<FlutterStandardTypedData *> *)imageBytesList imageWidthForBytesList:(nullable NSNumber *)imageWidthForBytesList imageHeightForBytesList:(nullable NSNumber *)imageHeightForBytesList minimumScore:(double)minimumScore IOUThreshold:(double)IOUThreshold boxesLimit:(NSInteger)boxesLimit completion:(void (^)(NSArray<ResultObjectDetection *> *_Nullable, FlutterError *_Nullable))completion;
 @end
 
-extern void SetUpPyTorchApi(id<FlutterBinaryMessenger> binaryMessenger, NSObject<PyTorchApi> *_Nullable api);
+extern void SetUpModelApi(id<FlutterBinaryMessenger> binaryMessenger, NSObject<ModelApi> *_Nullable api);
 
 NS_ASSUME_NONNULL_END

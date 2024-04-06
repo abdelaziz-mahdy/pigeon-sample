@@ -15,37 +15,6 @@ PlatformException _createConnectionError(String channelName) {
   );
 }
 
-class Message {
-  Message({
-    required this.subject,
-    required this.body,
-    required this.email,
-  });
-
-  String subject;
-
-  String body;
-
-  String email;
-
-  Object encode() {
-    return <Object?>[
-      subject,
-      body,
-      email,
-    ];
-  }
-
-  static Message decode(Object result) {
-    result as List<Object?>;
-    return Message(
-      subject: result[0]! as String,
-      body: result[1]! as String,
-      email: result[2]! as String,
-    );
-  }
-}
-
 class PyTorchRect {
   PyTorchRect({
     required this.left,
@@ -92,73 +61,51 @@ class PyTorchRect {
   }
 }
 
-class _MessageApiCodec extends StandardMessageCodec {
-  const _MessageApiCodec();
-  @override
-  void writeValue(WriteBuffer buffer, Object? value) {
-    if (value is Message) {
-      buffer.putUint8(128);
-      writeValue(buffer, value.encode());
-    } else {
-      super.writeValue(buffer, value);
-    }
+class ResultObjectDetection {
+  ResultObjectDetection({
+    required this.classIndex,
+    this.className,
+    required this.score,
+    required this.rect,
+  });
+
+  int classIndex;
+
+  String? className;
+
+  double score;
+
+  PyTorchRect rect;
+
+  Object encode() {
+    return <Object?>[
+      classIndex,
+      className,
+      score,
+      rect.encode(),
+    ];
   }
 
-  @override
-  Object? readValueOfType(int type, ReadBuffer buffer) {
-    switch (type) {
-      case 128: 
-        return Message.decode(readValue(buffer)!);
-      default:
-        return super.readValueOfType(type, buffer);
-    }
-  }
-}
-
-class MessageApi {
-  /// Constructor for [MessageApi].  The [binaryMessenger] named argument is
-  /// available for dependency injection.  If it is left null, the default
-  /// BinaryMessenger will be used which routes to the host platform.
-  MessageApi({BinaryMessenger? binaryMessenger})
-      : __pigeon_binaryMessenger = binaryMessenger;
-  final BinaryMessenger? __pigeon_binaryMessenger;
-
-  static const MessageCodec<Object?> pigeonChannelCodec = _MessageApiCodec();
-
-  Future<List<Message?>> getMessages(String email) async {
-    const String __pigeon_channelName = 'dev.flutter.pigeon.reproduce_issues_pigeon.MessageApi.getMessages';
-    final BasicMessageChannel<Object?> __pigeon_channel = BasicMessageChannel<Object?>(
-      __pigeon_channelName,
-      pigeonChannelCodec,
-      binaryMessenger: __pigeon_binaryMessenger,
+  static ResultObjectDetection decode(Object result) {
+    result as List<Object?>;
+    return ResultObjectDetection(
+      classIndex: result[0]! as int,
+      className: result[1] as String?,
+      score: result[2]! as double,
+      rect: PyTorchRect.decode(result[3]! as List<Object?>),
     );
-    final List<Object?>? __pigeon_replyList =
-        await __pigeon_channel.send(<Object?>[email]) as List<Object?>?;
-    if (__pigeon_replyList == null) {
-      throw _createConnectionError(__pigeon_channelName);
-    } else if (__pigeon_replyList.length > 1) {
-      throw PlatformException(
-        code: __pigeon_replyList[0]! as String,
-        message: __pigeon_replyList[1] as String?,
-        details: __pigeon_replyList[2],
-      );
-    } else if (__pigeon_replyList[0] == null) {
-      throw PlatformException(
-        code: 'null-error',
-        message: 'Host platform returned null value for non-null return value.',
-      );
-    } else {
-      return (__pigeon_replyList[0] as List<Object?>?)!.cast<Message?>();
-    }
   }
 }
 
-class _PyTorchApiCodec extends StandardMessageCodec {
-  const _PyTorchApiCodec();
+class _ModelApiCodec extends StandardMessageCodec {
+  const _ModelApiCodec();
   @override
   void writeValue(WriteBuffer buffer, Object? value) {
     if (value is PyTorchRect) {
       buffer.putUint8(128);
+      writeValue(buffer, value.encode());
+    } else if (value is ResultObjectDetection) {
+      buffer.putUint8(129);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -170,31 +117,33 @@ class _PyTorchApiCodec extends StandardMessageCodec {
     switch (type) {
       case 128: 
         return PyTorchRect.decode(readValue(buffer)!);
+      case 129: 
+        return ResultObjectDetection.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
   }
 }
 
-class PyTorchApi {
-  /// Constructor for [PyTorchApi].  The [binaryMessenger] named argument is
+class ModelApi {
+  /// Constructor for [ModelApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
-  PyTorchApi({BinaryMessenger? binaryMessenger})
+  ModelApi({BinaryMessenger? binaryMessenger})
       : __pigeon_binaryMessenger = binaryMessenger;
   final BinaryMessenger? __pigeon_binaryMessenger;
 
-  static const MessageCodec<Object?> pigeonChannelCodec = _PyTorchApiCodec();
+  static const MessageCodec<Object?> pigeonChannelCodec = _ModelApiCodec();
 
-  Future<List<PyTorchRect?>> getRects() async {
-    const String __pigeon_channelName = 'dev.flutter.pigeon.reproduce_issues_pigeon.PyTorchApi.getRects';
+  Future<int> loadModel(String modelPath, int? numberOfClasses, int? imageWidth, int? imageHeight, int? objectDetectionModelType) async {
+    const String __pigeon_channelName = 'dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.loadModel';
     final BasicMessageChannel<Object?> __pigeon_channel = BasicMessageChannel<Object?>(
       __pigeon_channelName,
       pigeonChannelCodec,
       binaryMessenger: __pigeon_binaryMessenger,
     );
     final List<Object?>? __pigeon_replyList =
-        await __pigeon_channel.send(null) as List<Object?>?;
+        await __pigeon_channel.send(<Object?>[modelPath, numberOfClasses, imageWidth, imageHeight, objectDetectionModelType]) as List<Object?>?;
     if (__pigeon_replyList == null) {
       throw _createConnectionError(__pigeon_channelName);
     } else if (__pigeon_replyList.length > 1) {
@@ -209,7 +158,142 @@ class PyTorchApi {
         message: 'Host platform returned null value for non-null return value.',
       );
     } else {
-      return (__pigeon_replyList[0] as List<Object?>?)!.cast<PyTorchRect?>();
+      return (__pigeon_replyList[0] as int?)!;
+    }
+  }
+
+  ///predicts abstract number input
+  Future<List<Object?>?> getPredictionCustom(int index, List<double?> input, List<int?> shape, String dtype) async {
+    const String __pigeon_channelName = 'dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getPredictionCustom';
+    final BasicMessageChannel<Object?> __pigeon_channel = BasicMessageChannel<Object?>(
+      __pigeon_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: __pigeon_binaryMessenger,
+    );
+    final List<Object?>? __pigeon_replyList =
+        await __pigeon_channel.send(<Object?>[index, input, shape, dtype]) as List<Object?>?;
+    if (__pigeon_replyList == null) {
+      throw _createConnectionError(__pigeon_channelName);
+    } else if (__pigeon_replyList.length > 1) {
+      throw PlatformException(
+        code: __pigeon_replyList[0]! as String,
+        message: __pigeon_replyList[1] as String?,
+        details: __pigeon_replyList[2],
+      );
+    } else {
+      return (__pigeon_replyList[0] as List<Object?>?);
+    }
+  }
+
+  ///predicts raw image but returns the raw net output
+  Future<List<double?>> getRawImagePredictionList(int index, Uint8List imageData) async {
+    const String __pigeon_channelName = 'dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getRawImagePredictionList';
+    final BasicMessageChannel<Object?> __pigeon_channel = BasicMessageChannel<Object?>(
+      __pigeon_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: __pigeon_binaryMessenger,
+    );
+    final List<Object?>? __pigeon_replyList =
+        await __pigeon_channel.send(<Object?>[index, imageData]) as List<Object?>?;
+    if (__pigeon_replyList == null) {
+      throw _createConnectionError(__pigeon_channelName);
+    } else if (__pigeon_replyList.length > 1) {
+      throw PlatformException(
+        code: __pigeon_replyList[0]! as String,
+        message: __pigeon_replyList[1] as String?,
+        details: __pigeon_replyList[2],
+      );
+    } else if (__pigeon_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (__pigeon_replyList[0] as List<Object?>?)!.cast<double?>();
+    }
+  }
+
+  ///predicts raw image but returns the raw net output
+  Future<List<ResultObjectDetection?>> getRawImagePredictionListObjectDetection(int index, Uint8List imageData, double minimumScore, double IOUThreshold, int boxesLimit) async {
+    const String __pigeon_channelName = 'dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getRawImagePredictionListObjectDetection';
+    final BasicMessageChannel<Object?> __pigeon_channel = BasicMessageChannel<Object?>(
+      __pigeon_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: __pigeon_binaryMessenger,
+    );
+    final List<Object?>? __pigeon_replyList =
+        await __pigeon_channel.send(<Object?>[index, imageData, minimumScore, IOUThreshold, boxesLimit]) as List<Object?>?;
+    if (__pigeon_replyList == null) {
+      throw _createConnectionError(__pigeon_channelName);
+    } else if (__pigeon_replyList.length > 1) {
+      throw PlatformException(
+        code: __pigeon_replyList[0]! as String,
+        message: __pigeon_replyList[1] as String?,
+        details: __pigeon_replyList[2],
+      );
+    } else if (__pigeon_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (__pigeon_replyList[0] as List<Object?>?)!.cast<ResultObjectDetection?>();
+    }
+  }
+
+  ///predicts image but returns the raw net output
+  Future<List<double?>> getImagePredictionList(int index, Uint8List? imageData, List<Uint8List?>? imageBytesList, int? imageWidthForBytesList, int? imageHeightForBytesList, List<double?> mean, List<double?> std) async {
+    const String __pigeon_channelName = 'dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getImagePredictionList';
+    final BasicMessageChannel<Object?> __pigeon_channel = BasicMessageChannel<Object?>(
+      __pigeon_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: __pigeon_binaryMessenger,
+    );
+    final List<Object?>? __pigeon_replyList =
+        await __pigeon_channel.send(<Object?>[index, imageData, imageBytesList, imageWidthForBytesList, imageHeightForBytesList, mean, std]) as List<Object?>?;
+    if (__pigeon_replyList == null) {
+      throw _createConnectionError(__pigeon_channelName);
+    } else if (__pigeon_replyList.length > 1) {
+      throw PlatformException(
+        code: __pigeon_replyList[0]! as String,
+        message: __pigeon_replyList[1] as String?,
+        details: __pigeon_replyList[2],
+      );
+    } else if (__pigeon_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (__pigeon_replyList[0] as List<Object?>?)!.cast<double?>();
+    }
+  }
+
+  ///predicts image but returns the output detections
+  Future<List<ResultObjectDetection?>> getImagePredictionListObjectDetection(int index, Uint8List? imageData, List<Uint8List?>? imageBytesList, int? imageWidthForBytesList, int? imageHeightForBytesList, double minimumScore, double IOUThreshold, int boxesLimit) async {
+    const String __pigeon_channelName = 'dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getImagePredictionListObjectDetection';
+    final BasicMessageChannel<Object?> __pigeon_channel = BasicMessageChannel<Object?>(
+      __pigeon_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: __pigeon_binaryMessenger,
+    );
+    final List<Object?>? __pigeon_replyList =
+        await __pigeon_channel.send(<Object?>[index, imageData, imageBytesList, imageWidthForBytesList, imageHeightForBytesList, minimumScore, IOUThreshold, boxesLimit]) as List<Object?>?;
+    if (__pigeon_replyList == null) {
+      throw _createConnectionError(__pigeon_channelName);
+    } else if (__pigeon_replyList.length > 1) {
+      throw PlatformException(
+        code: __pigeon_replyList[0]! as String,
+        message: __pigeon_replyList[1] as String?,
+        details: __pigeon_replyList[2],
+      );
+    } else if (__pigeon_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (__pigeon_replyList[0] as List<Object?>?)!.cast<ResultObjectDetection?>();
     }
   }
 }

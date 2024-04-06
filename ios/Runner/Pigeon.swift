@@ -40,32 +40,6 @@ private func nilOrValue<T>(_ value: Any?) -> T? {
 }
 
 /// Generated class from Pigeon that represents data sent in messages.
-struct Message {
-  var subject: String
-  var body: String
-  var email: String
-
-  static func fromList(_ list: [Any?]) -> Message? {
-    let subject = list[0] as! String
-    let body = list[1] as! String
-    let email = list[2] as! String
-
-    return Message(
-      subject: subject,
-      body: body,
-      email: email
-    )
-  }
-  func toList() -> [Any?] {
-    return [
-      subject,
-      body,
-      email,
-    ]
-  }
-}
-
-/// Generated class from Pigeon that represents data sent in messages.
 struct PyTorchRect {
   var left: Double
   var top: Double
@@ -102,85 +76,57 @@ struct PyTorchRect {
     ]
   }
 }
-private class MessageApiCodecReader: FlutterStandardReader {
-  override func readValue(ofType type: UInt8) -> Any? {
-    switch type {
-    case 128:
-      return Message.fromList(self.readValue() as! [Any?])
-    default:
-      return super.readValue(ofType: type)
-    }
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct ResultObjectDetection {
+  var classIndex: Int64
+  var className: String? = nil
+  var score: Double
+  var rect: PyTorchRect
+
+  static func fromList(_ list: [Any?]) -> ResultObjectDetection? {
+    let classIndex = list[0] is Int64 ? list[0] as! Int64 : Int64(list[0] as! Int32)
+    let className: String? = nilOrValue(list[1])
+    let score = list[2] as! Double
+    let rect = PyTorchRect.fromList(list[3] as! [Any?])!
+
+    return ResultObjectDetection(
+      classIndex: classIndex,
+      className: className,
+      score: score,
+      rect: rect
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      classIndex,
+      className,
+      score,
+      rect.toList(),
+    ]
   }
 }
 
-private class MessageApiCodecWriter: FlutterStandardWriter {
-  override func writeValue(_ value: Any) {
-    if let value = value as? Message {
-      super.writeByte(128)
-      super.writeValue(value.toList())
-    } else {
-      super.writeValue(value)
-    }
-  }
-}
-
-private class MessageApiCodecReaderWriter: FlutterStandardReaderWriter {
-  override func reader(with data: Data) -> FlutterStandardReader {
-    return MessageApiCodecReader(data: data)
-  }
-
-  override func writer(with data: NSMutableData) -> FlutterStandardWriter {
-    return MessageApiCodecWriter(data: data)
-  }
-}
-
-class MessageApiCodec: FlutterStandardMessageCodec {
-  static let shared = MessageApiCodec(readerWriter: MessageApiCodecReaderWriter())
-}
-
-/// Generated protocol from Pigeon that represents a handler of messages from Flutter.
-protocol MessageApi {
-  func getMessages(email: String) throws -> [Message]
-}
-
-/// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
-class MessageApiSetup {
-  /// The codec used by MessageApi.
-  static var codec: FlutterStandardMessageCodec { MessageApiCodec.shared }
-  /// Sets up an instance of `MessageApi` to handle messages through the `binaryMessenger`.
-  static func setUp(binaryMessenger: FlutterBinaryMessenger, api: MessageApi?) {
-    let getMessagesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.MessageApi.getMessages", binaryMessenger: binaryMessenger, codec: codec)
-    if let api = api {
-      getMessagesChannel.setMessageHandler { message, reply in
-        let args = message as! [Any?]
-        let emailArg = args[0] as! String
-        do {
-          let result = try api.getMessages(email: emailArg)
-          reply(wrapResult(result))
-        } catch {
-          reply(wrapError(error))
-        }
-      }
-    } else {
-      getMessagesChannel.setMessageHandler(nil)
-    }
-  }
-}
-private class PyTorchApiCodecReader: FlutterStandardReader {
+private class ModelApiCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
     case 128:
       return PyTorchRect.fromList(self.readValue() as! [Any?])
+    case 129:
+      return ResultObjectDetection.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
   }
 }
 
-private class PyTorchApiCodecWriter: FlutterStandardWriter {
+private class ModelApiCodecWriter: FlutterStandardWriter {
   override func writeValue(_ value: Any) {
     if let value = value as? PyTorchRect {
       super.writeByte(128)
+      super.writeValue(value.toList())
+    } else if let value = value as? ResultObjectDetection {
+      super.writeByte(129)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -188,43 +134,172 @@ private class PyTorchApiCodecWriter: FlutterStandardWriter {
   }
 }
 
-private class PyTorchApiCodecReaderWriter: FlutterStandardReaderWriter {
+private class ModelApiCodecReaderWriter: FlutterStandardReaderWriter {
   override func reader(with data: Data) -> FlutterStandardReader {
-    return PyTorchApiCodecReader(data: data)
+    return ModelApiCodecReader(data: data)
   }
 
   override func writer(with data: NSMutableData) -> FlutterStandardWriter {
-    return PyTorchApiCodecWriter(data: data)
+    return ModelApiCodecWriter(data: data)
   }
 }
 
-class PyTorchApiCodec: FlutterStandardMessageCodec {
-  static let shared = PyTorchApiCodec(readerWriter: PyTorchApiCodecReaderWriter())
+class ModelApiCodec: FlutterStandardMessageCodec {
+  static let shared = ModelApiCodec(readerWriter: ModelApiCodecReaderWriter())
 }
 
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
-protocol PyTorchApi {
-  func getRects() throws -> [PyTorchRect]
+protocol ModelApi {
+  func loadModel(modelPath: String, numberOfClasses: Int64?, imageWidth: Int64?, imageHeight: Int64?, objectDetectionModelType: Int64?, completion: @escaping (Result<Int64, Error>) -> Void)
+  ///predicts abstract number input
+  func getPredictionCustom(index: Int64, input: [Double], shape: [Int64], dtype: String, completion: @escaping (Result<[Any?]?, Error>) -> Void)
+  ///predicts raw image but returns the raw net output
+  func getRawImagePredictionList(index: Int64, imageData: FlutterStandardTypedData, completion: @escaping (Result<[Double], Error>) -> Void)
+  ///predicts raw image but returns the raw net output
+  func getRawImagePredictionListObjectDetection(index: Int64, imageData: FlutterStandardTypedData, minimumScore: Double, IOUThreshold: Double, boxesLimit: Int64, completion: @escaping (Result<[ResultObjectDetection], Error>) -> Void)
+  ///predicts image but returns the raw net output
+  func getImagePredictionList(index: Int64, imageData: FlutterStandardTypedData?, imageBytesList: [FlutterStandardTypedData]?, imageWidthForBytesList: Int64?, imageHeightForBytesList: Int64?, mean: [Double], std: [Double], completion: @escaping (Result<[Double], Error>) -> Void)
+  ///predicts image but returns the output detections
+  func getImagePredictionListObjectDetection(index: Int64, imageData: FlutterStandardTypedData?, imageBytesList: [FlutterStandardTypedData]?, imageWidthForBytesList: Int64?, imageHeightForBytesList: Int64?, minimumScore: Double, IOUThreshold: Double, boxesLimit: Int64, completion: @escaping (Result<[ResultObjectDetection], Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
-class PyTorchApiSetup {
-  /// The codec used by PyTorchApi.
-  static var codec: FlutterStandardMessageCodec { PyTorchApiCodec.shared }
-  /// Sets up an instance of `PyTorchApi` to handle messages through the `binaryMessenger`.
-  static func setUp(binaryMessenger: FlutterBinaryMessenger, api: PyTorchApi?) {
-    let getRectsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.PyTorchApi.getRects", binaryMessenger: binaryMessenger, codec: codec)
+class ModelApiSetup {
+  /// The codec used by ModelApi.
+  static var codec: FlutterStandardMessageCodec { ModelApiCodec.shared }
+  /// Sets up an instance of `ModelApi` to handle messages through the `binaryMessenger`.
+  static func setUp(binaryMessenger: FlutterBinaryMessenger, api: ModelApi?) {
+    let loadModelChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.loadModel", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      getRectsChannel.setMessageHandler { _, reply in
-        do {
-          let result = try api.getRects()
-          reply(wrapResult(result))
-        } catch {
-          reply(wrapError(error))
+      loadModelChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let modelPathArg = args[0] as! String
+        let numberOfClassesArg: Int64? = isNullish(args[1]) ? nil : (args[1] is Int64? ? args[1] as! Int64? : Int64(args[1] as! Int32))
+        let imageWidthArg: Int64? = isNullish(args[2]) ? nil : (args[2] is Int64? ? args[2] as! Int64? : Int64(args[2] as! Int32))
+        let imageHeightArg: Int64? = isNullish(args[3]) ? nil : (args[3] is Int64? ? args[3] as! Int64? : Int64(args[3] as! Int32))
+        let objectDetectionModelTypeArg: Int64? = isNullish(args[4]) ? nil : (args[4] is Int64? ? args[4] as! Int64? : Int64(args[4] as! Int32))
+        api.loadModel(modelPath: modelPathArg, numberOfClasses: numberOfClassesArg, imageWidth: imageWidthArg, imageHeight: imageHeightArg, objectDetectionModelType: objectDetectionModelTypeArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
         }
       }
     } else {
-      getRectsChannel.setMessageHandler(nil)
+      loadModelChannel.setMessageHandler(nil)
+    }
+    ///predicts abstract number input
+    let getPredictionCustomChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getPredictionCustom", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getPredictionCustomChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let indexArg = args[0] is Int64 ? args[0] as! Int64 : Int64(args[0] as! Int32)
+        let inputArg = args[1] as! [Double]
+        let shapeArg = args[2] as! [Int64]
+        let dtypeArg = args[3] as! String
+        api.getPredictionCustom(index: indexArg, input: inputArg, shape: shapeArg, dtype: dtypeArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getPredictionCustomChannel.setMessageHandler(nil)
+    }
+    ///predicts raw image but returns the raw net output
+    let getRawImagePredictionListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getRawImagePredictionList", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getRawImagePredictionListChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let indexArg = args[0] is Int64 ? args[0] as! Int64 : Int64(args[0] as! Int32)
+        let imageDataArg = args[1] as! FlutterStandardTypedData
+        api.getRawImagePredictionList(index: indexArg, imageData: imageDataArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getRawImagePredictionListChannel.setMessageHandler(nil)
+    }
+    ///predicts raw image but returns the raw net output
+    let getRawImagePredictionListObjectDetectionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getRawImagePredictionListObjectDetection", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getRawImagePredictionListObjectDetectionChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let indexArg = args[0] is Int64 ? args[0] as! Int64 : Int64(args[0] as! Int32)
+        let imageDataArg = args[1] as! FlutterStandardTypedData
+        let minimumScoreArg = args[2] as! Double
+        let IOUThresholdArg = args[3] as! Double
+        let boxesLimitArg = args[4] is Int64 ? args[4] as! Int64 : Int64(args[4] as! Int32)
+        api.getRawImagePredictionListObjectDetection(index: indexArg, imageData: imageDataArg, minimumScore: minimumScoreArg, IOUThreshold: IOUThresholdArg, boxesLimit: boxesLimitArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getRawImagePredictionListObjectDetectionChannel.setMessageHandler(nil)
+    }
+    ///predicts image but returns the raw net output
+    let getImagePredictionListChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getImagePredictionList", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getImagePredictionListChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let indexArg = args[0] is Int64 ? args[0] as! Int64 : Int64(args[0] as! Int32)
+        let imageDataArg: FlutterStandardTypedData? = nilOrValue(args[1])
+        let imageBytesListArg: [FlutterStandardTypedData]? = nilOrValue(args[2])
+        let imageWidthForBytesListArg: Int64? = isNullish(args[3]) ? nil : (args[3] is Int64? ? args[3] as! Int64? : Int64(args[3] as! Int32))
+        let imageHeightForBytesListArg: Int64? = isNullish(args[4]) ? nil : (args[4] is Int64? ? args[4] as! Int64? : Int64(args[4] as! Int32))
+        let meanArg = args[5] as! [Double]
+        let stdArg = args[6] as! [Double]
+        api.getImagePredictionList(index: indexArg, imageData: imageDataArg, imageBytesList: imageBytesListArg, imageWidthForBytesList: imageWidthForBytesListArg, imageHeightForBytesList: imageHeightForBytesListArg, mean: meanArg, std: stdArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getImagePredictionListChannel.setMessageHandler(nil)
+    }
+    ///predicts image but returns the output detections
+    let getImagePredictionListObjectDetectionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getImagePredictionListObjectDetection", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getImagePredictionListObjectDetectionChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let indexArg = args[0] is Int64 ? args[0] as! Int64 : Int64(args[0] as! Int32)
+        let imageDataArg: FlutterStandardTypedData? = nilOrValue(args[1])
+        let imageBytesListArg: [FlutterStandardTypedData]? = nilOrValue(args[2])
+        let imageWidthForBytesListArg: Int64? = isNullish(args[3]) ? nil : (args[3] is Int64? ? args[3] as! Int64? : Int64(args[3] as! Int32))
+        let imageHeightForBytesListArg: Int64? = isNullish(args[4]) ? nil : (args[4] is Int64? ? args[4] as! Int64? : Int64(args[4] as! Int32))
+        let minimumScoreArg = args[5] as! Double
+        let IOUThresholdArg = args[6] as! Double
+        let boxesLimitArg = args[7] is Int64 ? args[7] as! Int64 : Int64(args[7] as! Int32)
+        api.getImagePredictionListObjectDetection(index: indexArg, imageData: imageDataArg, imageBytesList: imageBytesListArg, imageWidthForBytesList: imageWidthForBytesListArg, imageHeightForBytesList: imageHeightForBytesListArg, minimumScore: minimumScoreArg, IOUThreshold: IOUThresholdArg, boxesLimit: boxesLimitArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      getImagePredictionListObjectDetectionChannel.setMessageHandler(nil)
     }
   }
 }

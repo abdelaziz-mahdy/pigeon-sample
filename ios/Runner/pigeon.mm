@@ -27,45 +27,16 @@ static id GetNullableObjectAtIndex(NSArray *array, NSInteger key) {
   return (result == [NSNull null]) ? nil : result;
 }
 
-@interface Message ()
-+ (Message *)fromList:(NSArray *)list;
-+ (nullable Message *)nullableFromList:(NSArray *)list;
-- (NSArray *)toList;
-@end
-
 @interface PyTorchRect ()
 + (PyTorchRect *)fromList:(NSArray *)list;
 + (nullable PyTorchRect *)nullableFromList:(NSArray *)list;
 - (NSArray *)toList;
 @end
 
-@implementation Message
-+ (instancetype)makeWithSubject:(NSString *)subject
-    body:(NSString *)body
-    email:(NSString *)email {
-  Message* pigeonResult = [[Message alloc] init];
-  pigeonResult.subject = subject;
-  pigeonResult.body = body;
-  pigeonResult.email = email;
-  return pigeonResult;
-}
-+ (Message *)fromList:(NSArray *)list {
-  Message *pigeonResult = [[Message alloc] init];
-  pigeonResult.subject = GetNullableObjectAtIndex(list, 0);
-  pigeonResult.body = GetNullableObjectAtIndex(list, 1);
-  pigeonResult.email = GetNullableObjectAtIndex(list, 2);
-  return pigeonResult;
-}
-+ (nullable Message *)nullableFromList:(NSArray *)list {
-  return (list) ? [Message fromList:list] : nil;
-}
-- (NSArray *)toList {
-  return @[
-    self.subject ?: [NSNull null],
-    self.body ?: [NSNull null],
-    self.email ?: [NSNull null],
-  ];
-}
+@interface ResultObjectDetection ()
++ (ResultObjectDetection *)fromList:(NSArray *)list;
++ (nullable ResultObjectDetection *)nullableFromList:(NSArray *)list;
+- (NSArray *)toList;
 @end
 
 @implementation PyTorchRect
@@ -109,25 +80,63 @@ static id GetNullableObjectAtIndex(NSArray *array, NSInteger key) {
 }
 @end
 
-@interface MessageApiCodecReader : FlutterStandardReader
+@implementation ResultObjectDetection
++ (instancetype)makeWithClassIndex:(NSInteger )classIndex
+    className:(nullable NSString *)className
+    score:(double )score
+    rect:(PyTorchRect *)rect {
+  ResultObjectDetection* pigeonResult = [[ResultObjectDetection alloc] init];
+  pigeonResult.classIndex = classIndex;
+  pigeonResult.className = className;
+  pigeonResult.score = score;
+  pigeonResult.rect = rect;
+  return pigeonResult;
+}
++ (ResultObjectDetection *)fromList:(NSArray *)list {
+  ResultObjectDetection *pigeonResult = [[ResultObjectDetection alloc] init];
+  pigeonResult.classIndex = [GetNullableObjectAtIndex(list, 0) integerValue];
+  pigeonResult.className = GetNullableObjectAtIndex(list, 1);
+  pigeonResult.score = [GetNullableObjectAtIndex(list, 2) doubleValue];
+  pigeonResult.rect = [PyTorchRect nullableFromList:(GetNullableObjectAtIndex(list, 3))];
+  return pigeonResult;
+}
++ (nullable ResultObjectDetection *)nullableFromList:(NSArray *)list {
+  return (list) ? [ResultObjectDetection fromList:list] : nil;
+}
+- (NSArray *)toList {
+  return @[
+    @(self.classIndex),
+    self.className ?: [NSNull null],
+    @(self.score),
+    (self.rect ? [self.rect toList] : [NSNull null]),
+  ];
+}
 @end
-@implementation MessageApiCodecReader
+
+@interface ModelApiCodecReader : FlutterStandardReader
+@end
+@implementation ModelApiCodecReader
 - (nullable id)readValueOfType:(UInt8)type {
   switch (type) {
     case 128: 
-      return [Message fromList:[self readValue]];
+      return [PyTorchRect fromList:[self readValue]];
+    case 129: 
+      return [ResultObjectDetection fromList:[self readValue]];
     default:
       return [super readValueOfType:type];
   }
 }
 @end
 
-@interface MessageApiCodecWriter : FlutterStandardWriter
+@interface ModelApiCodecWriter : FlutterStandardWriter
 @end
-@implementation MessageApiCodecWriter
+@implementation ModelApiCodecWriter
 - (void)writeValue:(id)value {
-  if ([value isKindOfClass:[Message class]]) {
+  if ([value isKindOfClass:[PyTorchRect class]]) {
     [self writeByte:128];
+    [self writeValue:[value toList]];
+  } else if ([value isKindOfClass:[ResultObjectDetection class]]) {
+    [self writeByte:129];
     [self writeValue:[value toList]];
   } else {
     [super writeValue:value];
@@ -135,108 +144,179 @@ static id GetNullableObjectAtIndex(NSArray *array, NSInteger key) {
 }
 @end
 
-@interface MessageApiCodecReaderWriter : FlutterStandardReaderWriter
+@interface ModelApiCodecReaderWriter : FlutterStandardReaderWriter
 @end
-@implementation MessageApiCodecReaderWriter
+@implementation ModelApiCodecReaderWriter
 - (FlutterStandardWriter *)writerWithData:(NSMutableData *)data {
-  return [[MessageApiCodecWriter alloc] initWithData:data];
+  return [[ModelApiCodecWriter alloc] initWithData:data];
 }
 - (FlutterStandardReader *)readerWithData:(NSData *)data {
-  return [[MessageApiCodecReader alloc] initWithData:data];
+  return [[ModelApiCodecReader alloc] initWithData:data];
 }
 @end
 
-NSObject<FlutterMessageCodec> *MessageApiGetCodec(void) {
+NSObject<FlutterMessageCodec> *ModelApiGetCodec(void) {
   static FlutterStandardMessageCodec *sSharedObject = nil;
   static dispatch_once_t sPred = 0;
   dispatch_once(&sPred, ^{
-    MessageApiCodecReaderWriter *readerWriter = [[MessageApiCodecReaderWriter alloc] init];
+    ModelApiCodecReaderWriter *readerWriter = [[ModelApiCodecReaderWriter alloc] init];
     sSharedObject = [FlutterStandardMessageCodec codecWithReaderWriter:readerWriter];
   });
   return sSharedObject;
 }
 
-void SetUpMessageApi(id<FlutterBinaryMessenger> binaryMessenger, NSObject<MessageApi> *api) {
+void SetUpModelApi(id<FlutterBinaryMessenger> binaryMessenger, NSObject<ModelApi> *api) {
   {
+    NSObject<FlutterTaskQueue> *taskQueue = [binaryMessenger makeBackgroundTaskQueue];
     FlutterBasicMessageChannel *channel =
       [[FlutterBasicMessageChannel alloc]
-        initWithName:@"dev.flutter.pigeon.reproduce_issues_pigeon.MessageApi.getMessages"
+        initWithName:@"dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.loadModel"
         binaryMessenger:binaryMessenger
-        codec:MessageApiGetCodec()];
+        codec:ModelApiGetCodec()
+taskQueue:taskQueue];
     if (api) {
-      NSCAssert([api respondsToSelector:@selector(getMessagesEmail:error:)], @"MessageApi api (%@) doesn't respond to @selector(getMessagesEmail:error:)", api);
+      NSCAssert([api respondsToSelector:@selector(loadModelModelPath:numberOfClasses:imageWidth:imageHeight:objectDetectionModelType:completion:)], @"ModelApi api (%@) doesn't respond to @selector(loadModelModelPath:numberOfClasses:imageWidth:imageHeight:objectDetectionModelType:completion:)", api);
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         NSArray *args = message;
-        NSString *arg_email = GetNullableObjectAtIndex(args, 0);
-        FlutterError *error;
-        NSArray<Message *> *output = [api getMessagesEmail:arg_email error:&error];
-        callback(wrapResult(output, error));
+        NSString *arg_modelPath = GetNullableObjectAtIndex(args, 0);
+        NSNumber *arg_numberOfClasses = GetNullableObjectAtIndex(args, 1);
+        NSNumber *arg_imageWidth = GetNullableObjectAtIndex(args, 2);
+        NSNumber *arg_imageHeight = GetNullableObjectAtIndex(args, 3);
+        NSNumber *arg_objectDetectionModelType = GetNullableObjectAtIndex(args, 4);
+        [api loadModelModelPath:arg_modelPath numberOfClasses:arg_numberOfClasses imageWidth:arg_imageWidth imageHeight:arg_imageHeight objectDetectionModelType:arg_objectDetectionModelType completion:^(NSNumber *_Nullable output, FlutterError *_Nullable error) {
+          callback(wrapResult(output, error));
+        }];
       }];
     } else {
       [channel setMessageHandler:nil];
     }
   }
-}
-@interface PyTorchApiCodecReader : FlutterStandardReader
-@end
-@implementation PyTorchApiCodecReader
-- (nullable id)readValueOfType:(UInt8)type {
-  switch (type) {
-    case 128: 
-      return [PyTorchRect fromList:[self readValue]];
-    default:
-      return [super readValueOfType:type];
-  }
-}
-@end
-
-@interface PyTorchApiCodecWriter : FlutterStandardWriter
-@end
-@implementation PyTorchApiCodecWriter
-- (void)writeValue:(id)value {
-  if ([value isKindOfClass:[PyTorchRect class]]) {
-    [self writeByte:128];
-    [self writeValue:[value toList]];
-  } else {
-    [super writeValue:value];
-  }
-}
-@end
-
-@interface PyTorchApiCodecReaderWriter : FlutterStandardReaderWriter
-@end
-@implementation PyTorchApiCodecReaderWriter
-- (FlutterStandardWriter *)writerWithData:(NSMutableData *)data {
-  return [[PyTorchApiCodecWriter alloc] initWithData:data];
-}
-- (FlutterStandardReader *)readerWithData:(NSData *)data {
-  return [[PyTorchApiCodecReader alloc] initWithData:data];
-}
-@end
-
-NSObject<FlutterMessageCodec> *PyTorchApiGetCodec(void) {
-  static FlutterStandardMessageCodec *sSharedObject = nil;
-  static dispatch_once_t sPred = 0;
-  dispatch_once(&sPred, ^{
-    PyTorchApiCodecReaderWriter *readerWriter = [[PyTorchApiCodecReaderWriter alloc] init];
-    sSharedObject = [FlutterStandardMessageCodec codecWithReaderWriter:readerWriter];
-  });
-  return sSharedObject;
-}
-
-void SetUpPyTorchApi(id<FlutterBinaryMessenger> binaryMessenger, NSObject<PyTorchApi> *api) {
+  ///predicts abstract number input
   {
+    NSObject<FlutterTaskQueue> *taskQueue = [binaryMessenger makeBackgroundTaskQueue];
     FlutterBasicMessageChannel *channel =
       [[FlutterBasicMessageChannel alloc]
-        initWithName:@"dev.flutter.pigeon.reproduce_issues_pigeon.PyTorchApi.getRects"
+        initWithName:@"dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getPredictionCustom"
         binaryMessenger:binaryMessenger
-        codec:PyTorchApiGetCodec()];
+        codec:ModelApiGetCodec()
+taskQueue:taskQueue];
     if (api) {
-      NSCAssert([api respondsToSelector:@selector(getRectsWithError:)], @"PyTorchApi api (%@) doesn't respond to @selector(getRectsWithError:)", api);
+      NSCAssert([api respondsToSelector:@selector(getPredictionCustomIndex:input:shape:dtype:completion:)], @"ModelApi api (%@) doesn't respond to @selector(getPredictionCustomIndex:input:shape:dtype:completion:)", api);
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
-        FlutterError *error;
-        NSArray<PyTorchRect *> *output = [api getRectsWithError:&error];
-        callback(wrapResult(output, error));
+        NSArray *args = message;
+        NSInteger arg_index = [GetNullableObjectAtIndex(args, 0) integerValue];
+        NSArray<double> *arg_input = GetNullableObjectAtIndex(args, 1);
+        NSArray<NSInteger> *arg_shape = GetNullableObjectAtIndex(args, 2);
+        NSString *arg_dtype = GetNullableObjectAtIndex(args, 3);
+        [api getPredictionCustomIndex:arg_index input:arg_input shape:arg_shape dtype:arg_dtype completion:^(NSArray *_Nullable output, FlutterError *_Nullable error) {
+          callback(wrapResult(output, error));
+        }];
+      }];
+    } else {
+      [channel setMessageHandler:nil];
+    }
+  }
+  ///predicts raw image but returns the raw net output
+  {
+    NSObject<FlutterTaskQueue> *taskQueue = [binaryMessenger makeBackgroundTaskQueue];
+    FlutterBasicMessageChannel *channel =
+      [[FlutterBasicMessageChannel alloc]
+        initWithName:@"dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getRawImagePredictionList"
+        binaryMessenger:binaryMessenger
+        codec:ModelApiGetCodec()
+taskQueue:taskQueue];
+    if (api) {
+      NSCAssert([api respondsToSelector:@selector(getRawImagePredictionListIndex:imageData:completion:)], @"ModelApi api (%@) doesn't respond to @selector(getRawImagePredictionListIndex:imageData:completion:)", api);
+      [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
+        NSArray *args = message;
+        NSInteger arg_index = [GetNullableObjectAtIndex(args, 0) integerValue];
+        FlutterStandardTypedData *arg_imageData = GetNullableObjectAtIndex(args, 1);
+        [api getRawImagePredictionListIndex:arg_index imageData:arg_imageData completion:^(NSArray<double> *_Nullable output, FlutterError *_Nullable error) {
+          callback(wrapResult(output, error));
+        }];
+      }];
+    } else {
+      [channel setMessageHandler:nil];
+    }
+  }
+  ///predicts raw image but returns the raw net output
+  {
+    NSObject<FlutterTaskQueue> *taskQueue = [binaryMessenger makeBackgroundTaskQueue];
+    FlutterBasicMessageChannel *channel =
+      [[FlutterBasicMessageChannel alloc]
+        initWithName:@"dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getRawImagePredictionListObjectDetection"
+        binaryMessenger:binaryMessenger
+        codec:ModelApiGetCodec()
+taskQueue:taskQueue];
+    if (api) {
+      NSCAssert([api respondsToSelector:@selector(getRawImagePredictionListObjectDetectionIndex:imageData:minimumScore:IOUThreshold:boxesLimit:completion:)], @"ModelApi api (%@) doesn't respond to @selector(getRawImagePredictionListObjectDetectionIndex:imageData:minimumScore:IOUThreshold:boxesLimit:completion:)", api);
+      [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
+        NSArray *args = message;
+        NSInteger arg_index = [GetNullableObjectAtIndex(args, 0) integerValue];
+        FlutterStandardTypedData *arg_imageData = GetNullableObjectAtIndex(args, 1);
+        double arg_minimumScore = [GetNullableObjectAtIndex(args, 2) doubleValue];
+        double arg_IOUThreshold = [GetNullableObjectAtIndex(args, 3) doubleValue];
+        NSInteger arg_boxesLimit = [GetNullableObjectAtIndex(args, 4) integerValue];
+        [api getRawImagePredictionListObjectDetectionIndex:arg_index imageData:arg_imageData minimumScore:arg_minimumScore IOUThreshold:arg_IOUThreshold boxesLimit:arg_boxesLimit completion:^(NSArray<ResultObjectDetection *> *_Nullable output, FlutterError *_Nullable error) {
+          callback(wrapResult(output, error));
+        }];
+      }];
+    } else {
+      [channel setMessageHandler:nil];
+    }
+  }
+  ///predicts image but returns the raw net output
+  {
+    NSObject<FlutterTaskQueue> *taskQueue = [binaryMessenger makeBackgroundTaskQueue];
+    FlutterBasicMessageChannel *channel =
+      [[FlutterBasicMessageChannel alloc]
+        initWithName:@"dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getImagePredictionList"
+        binaryMessenger:binaryMessenger
+        codec:ModelApiGetCodec()
+taskQueue:taskQueue];
+    if (api) {
+      NSCAssert([api respondsToSelector:@selector(getImagePredictionListIndex:imageData:imageBytesList:imageWidthForBytesList:imageHeightForBytesList:mean:std:completion:)], @"ModelApi api (%@) doesn't respond to @selector(getImagePredictionListIndex:imageData:imageBytesList:imageWidthForBytesList:imageHeightForBytesList:mean:std:completion:)", api);
+      [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
+        NSArray *args = message;
+        NSInteger arg_index = [GetNullableObjectAtIndex(args, 0) integerValue];
+        FlutterStandardTypedData *arg_imageData = GetNullableObjectAtIndex(args, 1);
+        NSArray<FlutterStandardTypedData *> *arg_imageBytesList = GetNullableObjectAtIndex(args, 2);
+        NSNumber *arg_imageWidthForBytesList = GetNullableObjectAtIndex(args, 3);
+        NSNumber *arg_imageHeightForBytesList = GetNullableObjectAtIndex(args, 4);
+        NSArray<double> *arg_mean = GetNullableObjectAtIndex(args, 5);
+        NSArray<double> *arg_std = GetNullableObjectAtIndex(args, 6);
+        [api getImagePredictionListIndex:arg_index imageData:arg_imageData imageBytesList:arg_imageBytesList imageWidthForBytesList:arg_imageWidthForBytesList imageHeightForBytesList:arg_imageHeightForBytesList mean:arg_mean std:arg_std completion:^(NSArray<double> *_Nullable output, FlutterError *_Nullable error) {
+          callback(wrapResult(output, error));
+        }];
+      }];
+    } else {
+      [channel setMessageHandler:nil];
+    }
+  }
+  ///predicts image but returns the output detections
+  {
+    NSObject<FlutterTaskQueue> *taskQueue = [binaryMessenger makeBackgroundTaskQueue];
+    FlutterBasicMessageChannel *channel =
+      [[FlutterBasicMessageChannel alloc]
+        initWithName:@"dev.flutter.pigeon.reproduce_issues_pigeon.ModelApi.getImagePredictionListObjectDetection"
+        binaryMessenger:binaryMessenger
+        codec:ModelApiGetCodec()
+taskQueue:taskQueue];
+    if (api) {
+      NSCAssert([api respondsToSelector:@selector(getImagePredictionListObjectDetectionIndex:imageData:imageBytesList:imageWidthForBytesList:imageHeightForBytesList:minimumScore:IOUThreshold:boxesLimit:completion:)], @"ModelApi api (%@) doesn't respond to @selector(getImagePredictionListObjectDetectionIndex:imageData:imageBytesList:imageWidthForBytesList:imageHeightForBytesList:minimumScore:IOUThreshold:boxesLimit:completion:)", api);
+      [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
+        NSArray *args = message;
+        NSInteger arg_index = [GetNullableObjectAtIndex(args, 0) integerValue];
+        FlutterStandardTypedData *arg_imageData = GetNullableObjectAtIndex(args, 1);
+        NSArray<FlutterStandardTypedData *> *arg_imageBytesList = GetNullableObjectAtIndex(args, 2);
+        NSNumber *arg_imageWidthForBytesList = GetNullableObjectAtIndex(args, 3);
+        NSNumber *arg_imageHeightForBytesList = GetNullableObjectAtIndex(args, 4);
+        double arg_minimumScore = [GetNullableObjectAtIndex(args, 5) doubleValue];
+        double arg_IOUThreshold = [GetNullableObjectAtIndex(args, 6) doubleValue];
+        NSInteger arg_boxesLimit = [GetNullableObjectAtIndex(args, 7) integerValue];
+        [api getImagePredictionListObjectDetectionIndex:arg_index imageData:arg_imageData imageBytesList:arg_imageBytesList imageWidthForBytesList:arg_imageWidthForBytesList imageHeightForBytesList:arg_imageHeightForBytesList minimumScore:arg_minimumScore IOUThreshold:arg_IOUThreshold boxesLimit:arg_boxesLimit completion:^(NSArray<ResultObjectDetection *> *_Nullable output, FlutterError *_Nullable error) {
+          callback(wrapResult(output, error));
+        }];
       }];
     } else {
       [channel setMessageHandler:nil];

@@ -49,8 +49,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
-    String _message = 'No message yet';
+  String _message = 'No message yet';
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-void _getMessageFromPigeon() async {
+  void _getMessageFromPigeon() async {
     // final MessageApi pigeon = MessageApi();
     // final List<Message?> messages = await pigeon.getMessages('people1@gmail.com');
     // setState(() {
@@ -86,12 +85,14 @@ void _getMessageFromPigeon() async {
     //   _message = messages.map((message) => message!.email).join('\n');
     // });
 
-    final PyTorchApi pigeon2 = PyTorchApi();
-    final PyTorchRect rect = PyTorchRect(left: 1, top: 2, right: 3, bottom: 4, width: 5, height: 6);
-    final List<PyTorchRect?> rects = await pigeon2.getRects();
+    final ModelApi pigeon2 = ModelApi();
+    final PyTorchRect rect =
+        PyTorchRect(left: 1, top: 2, right: 3, bottom: 4, width: 5, height: 6);
+    final List<ResultObjectDetection?> rects = await pigeon2
+        .getImagePredictionListObjectDetection(0, null, null, null, null,0.5, 0.5, 0);
     setState(() {
       // concat all messages into a single string
-      _message = rects.map((rect) => rect!.left.toString()).join('\n');
+      _message = rects.map((rect) => rect!.rect.left.toString()).join('\n');
     });
   }
 }
